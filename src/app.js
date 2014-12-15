@@ -29,7 +29,10 @@ var parseFeed = function(data, quantity) {
   for(var i = 0; i < quantity; i++) {
     // Always upper case the description string
     var title = data.list[i].weather[0].main;
-    title = title.charAt(0).toUpperCase() + title.substring(1);
+    //var temp = data.list[i].weather[0].main.temp;
+    var temp = data.list[i].main.temp;
+    temp = Math.round(temp - 273.15) + 'C';
+    title = title.charAt(0).toUpperCase() + title.substring(1) + ' (' + temp + ')';
 
     // Get date/time substring
     var time = data.list[i].dt_txt;
@@ -68,6 +71,35 @@ ajax(
       }]
     });
 
+    // Add an action for SELECT
+    resultsMenu.on('select', function(e) {
+      console.log('Item number ' + e.itemIndex + ' was pressed!');
+      // Get that forecast
+      var forecast = data.list[e.itemIndex];
+
+      // Assemble body string
+      var content = data.list[e.itemIndex].weather[0].description;
+
+      // Capitalize first letter
+      content = content.charAt(0).toUpperCase() + content.substring(1);
+      
+      // Add temperature, pressure etc
+      // °C
+      content += '\nTemperature: ' + Math.round(forecast.main.temp - 273.15) + 'C' + 
+        '\nPressure: ' + Math.round(forecast.main.pressure) + ' mbar' +
+        '\nWind: ' + Math.round(forecast.wind.speed) + ' mph, ' + 
+        Math.round(forecast.wind.deg) + 'deg.';
+      
+      // Create the Card for detailed view
+      var detailCard = new UI.Card({
+        title:'Details',
+        subtitle:e.item.subtitle,
+        body:content
+      });
+      detailCard.show();
+      
+    });
+
     // Show the Menu, hide the splash
     resultsMenu.show();
     splashWindow.hide();
@@ -77,4 +109,3 @@ ajax(
     console.log('Download failed: ' + error);
   }
 );
-
