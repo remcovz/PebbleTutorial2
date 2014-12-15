@@ -1,6 +1,9 @@
 var UI = require('ui');
 var ajax = require('ajax');
 var Vector2 = require('vector2');
+var Accel = require('ui/accel');
+var Vibe = require('ui/vibe');
+
 // Construct URL
 var cityName = 'Amsterdam';
 var URL = 'http://api.openweathermap.org/data/2.5/forecast?q=' + cityName;
@@ -96,16 +99,41 @@ ajax(
         subtitle:e.item.subtitle,
         body:content
       });
-      detailCard.show();
-      
+      detailCard.show();    
     });
 
     // Show the Menu, hide the splash
     resultsMenu.show();
     splashWindow.hide();
 
+    // Register for 'tap' events
+    resultsMenu.on('accelTap', function(e) {
+      console.log('TAP!');
+      console.log('axis: ' + e.axis + ', direction:' + e.direction);
+      ajax(
+        {
+          url:'http://api.openweathermap.org/data/2.5/forecast?q=London',
+          type:'json'
+        },
+        function(data) {
+          // Create an array of Menu items
+          var newItems = parseFeed(data, 10);
+
+          // Update the Menu's first section
+          resultsMenu.items(0, newItems);
+          // Notify the user
+          Vibe.vibrate('short');
+        },
+        function(error) {
+          console.log('Download failed: ' + error);
+        }
+      );
+    });
   },
   function(error) {
     console.log('Download failed: ' + error);
   }
 );
+
+// Prepare the accelerometer
+Accel.init();
