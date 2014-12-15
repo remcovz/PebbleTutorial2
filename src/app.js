@@ -1,41 +1,80 @@
 var UI = require('ui');
 var ajax = require('ajax');
-
-// Create a Card with title and subtitle
-var card = new UI.Card({
-  title:'Weather',
-  subtitle:'Fetching...'
-});
-
-// Display the Card
-card.show();
-
+var Vector2 = require('vector2');
 // Construct URL
 var cityName = 'Amsterdam';
-var URL = 'http://api.openweathermap.org/data/2.5/weather?q=' + cityName;
+var URL = 'http://api.openweathermap.org/data/2.5/forecast?q=' + cityName;
 
-// Make the request
+// Show splash screen while waiting for data
+var splashWindow = new UI.Window();
+
+// Text element to inform user
+var text = new UI.Text({
+  position: new Vector2(0, 0),
+  size: new Vector2(144, 168),
+  text:'Downloading weather data...',
+  font:'GOTHIC_28_BOLD',
+  color:'black',
+  textOverflow:'wrap',
+  textAlign:'center',
+  backgroundColor:'white'
+});
+
+// Add to splashWindow and show
+splashWindow.add(text);
+splashWindow.show();
+
+var parseFeed = function(data, quantity) {
+  var items = [];
+  for(var i = 0; i < quantity; i++) {
+    // Always upper case the description string
+    var title = data.list[i].weather[0].main;
+    title = title.charAt(0).toUpperCase() + title.substring(1);
+
+    // Get date/time substring
+    var time = data.list[i].dt_txt;
+    time = time.substring(time.indexOf('-') + 1, time.indexOf(':') + 3);
+
+    // Add to menu items array
+    items.push({
+      title:title,
+      subtitle:time
+    });
+  }
+
+  // Finally return whole array
+  return items;
+};
+
+// Make request to openweathermap.org
 ajax(
   {
-    url: URL,
-    type: 'json'
+    url:URL,
+    type:'json'
   },
   function(data) {
-    // Success!
-    console.log('Successfully fetched weather data!');
-    // Extract data
-    var location = data.name;
-    var temperature = Math.round(data.main.temp - 273.15) + 'C';
+    // Create an array of Menu items
+    var menuItems = parseFeed(data, 10);
 
-    // Always upper-case first letter of description
-    var description = data.weather[0].description;
-    description = description.charAt(0).toUpperCase() + description.substring(1);
-    // Show to user
-    card.subtitle(location + ', ' + temperature);
-    card.body(description);
+    // Check the items are extracted OK
+    for(var i = 0; i < menuItems.length; i++) {
+      console.log(menuItems[i].title + ' | ' + menuItems[i].subtitle);
+    }
+    // Construct Menu to show to user
+    var resultsMenu = new UI.Menu({
+      sections: [{
+        title: 'Current Forecast',
+        items: menuItems
+      }]
+    });
+
+    // Show the Menu, hide the splash
+    resultsMenu.show();
+    splashWindow.hide();
+
   },
   function(error) {
-    // Failure!
-    console.log('Failed fetching weather data: ' + error);
+    console.log('Download failed: ' + error);
   }
 );
+
