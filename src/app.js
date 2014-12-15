@@ -112,7 +112,7 @@ ajax(
       console.log('axis: ' + e.axis + ', direction:' + e.direction);
       ajax(
         {
-          url:'http://api.openweathermap.org/data/2.5/forecast?q=London',
+          url:URL,
           type:'json'
         },
         function(data) {
